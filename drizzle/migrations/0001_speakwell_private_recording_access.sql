@@ -1,0 +1,4 @@
+CREATE POLICY "People can read their SpeakWell recordings" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'speakwell-recordings' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "People can upload their SpeakWell recordings" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'speakwell-recordings' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "People can update their SpeakWell recordings" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'speakwell-recordings' AND (storage.foldername(name))[1] = auth.uid()::text) WITH CHECK (bucket_id = 'speakwell-recordings' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "People can delete their SpeakWell recordings" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'speakwell-recordings' AND (storage.foldername(name))[1] = auth.uid()::text);
