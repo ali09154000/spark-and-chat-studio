@@ -8,6 +8,13 @@
       "when": 1794789444170,
       "tag": "0000_speakwell_accounts_chat_practice",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794856561468,
+      "tag": "0001_speakwell_private_recording_access",
+      "breakpoints": true
     }
   ]
 }
