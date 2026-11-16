@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794789444170,
+      "tag": "0000_speakwell_accounts_chat_practice",
+      "breakpoints": true
+    }
+  ]
 }
