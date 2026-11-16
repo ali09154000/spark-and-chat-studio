@@ -15,6 +15,13 @@
       "when": 1794856561468,
       "tag": "0001_speakwell_private_recording_access",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794856935750,
+      "tag": "0002_speakwell_voice_tickets",
+      "breakpoints": true
     }
   ]
 }
