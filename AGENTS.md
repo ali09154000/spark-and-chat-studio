@@ -28,3 +28,9 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+<!-- AGENT-MEMORY:BEGIN -->
+- Keep product screens as focused TanStack file routes under `src/routes`, with reusable visual systems and layouts in `src/components`; this makes the user-facing page map explicit and shared UI consistent.
+- Stream AI chat through an authenticated TanStack server route, replay the account-owned conversation history, and persist only complete UI messages; this protects credentials and avoids incomplete or cross-account history.
+- Keep VoiceStudio as a separate, server-adapted speech service; require its short-lived path-bound browser tickets rather than exposing its master credential.
+<!-- AGENT-MEMORY:END -->
