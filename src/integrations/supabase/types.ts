@@ -14,7 +14,172 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      coach_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message_id: string
+          parts: Json
+          role: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          parts?: Json
+          role: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          parts?: Json
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "coach_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_sessions: {
+        Row: {
+          attempt: number
+          created_at: string
+          duration_seconds: number
+          id: string
+          media_path: string | null
+          mode: string
+          topic: string
+          transcript: string
+          user_id: string
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          media_path?: string | null
+          mode?: string
+          topic?: string
+          transcript?: string
+          user_id: string
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          media_path?: string | null
+          mode?: string
+          topic?: string
+          transcript?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          daily_target_minutes: number
+          display_name: string
+          learning_goals: string
+          learning_level: string
+          preferred_english: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_target_minutes?: number
+          display_name?: string
+          learning_goals?: string
+          learning_level?: string
+          preferred_english?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_target_minutes?: number
+          display_name?: string
+          learning_goals?: string
+          learning_level?: string
+          preferred_english?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      speaking_assessments: {
+        Row: {
+          category_scores: Json
+          created_at: string
+          feedback: string
+          id: string
+          practice_session_id: string
+          user_id: string
+        }
+        Insert: {
+          category_scores?: Json
+          created_at?: string
+          feedback?: string
+          id?: string
+          practice_session_id: string
+          user_id: string
+        }
+        Update: {
+          category_scores?: Json
+          created_at?: string
+          feedback?: string
+          id?: string
+          practice_session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "speaking_assessments_practice_session_id_fkey"
+            columns: ["practice_session_id"]
+            isOneToOne: true
+            referencedRelation: "practice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
