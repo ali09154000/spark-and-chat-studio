@@ -8,6 +8,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
 
 type RuntimeSupabase = ReturnType<typeof createClient<Database>>;
+type StoredParts = NonNullable<Database["public"]["Tables"]["coach_messages"]["Insert"]["parts"]>;
+
+function toStoredParts(parts: UIMessage["parts"]): StoredParts {
+  return JSON.parse(JSON.stringify(parts)) as StoredParts;
+}
 
 function createRequestClient(accessToken: string): RuntimeSupabase {
   const url = process.env["SUPABASE_URL"];
@@ -99,7 +104,7 @@ export async function handleCoachChat(request: Request): Promise<Response> {
     user_id: user.id,
     message_id: message.id,
     role: message.role === "assistant" ? "assistant" : "user",
-    parts: message.parts,
+    parts: toStoredParts(message.parts),
   }));
   const { error: saveUserError } = await db.from("coach_messages").upsert(messageRows, {
     onConflict: "conversation_id,message_id",
@@ -125,9 +130,11 @@ export async function handleCoachChat(request: Request): Promise<Response> {
   }
 
   const modelMessages = await convertToModelMessages(messages);
-  const gateway = createLovableAiGatewayProvider(apiKey, getLovableAiGatewayRunId(request), {
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-  });
+  const gateway = createLovableAiGatewayProvider(
+    apiKey,
+    getLovableAiGatewayRunId(request),
+    "https://ai.gateway.lovable.dev/v1",
+  );
 
   const result = streamText({
     model: gateway.responses("openai/gpt-6-astra"),
@@ -162,7 +169,7 @@ export async function handleCoachChat(request: Request): Promise<Response> {
         user_id: user.id,
         message_id: message.id,
         role: message.role === "assistant" ? "assistant" : "user",
-        parts: message.parts,
+        parts: toStoredParts(message.parts),
       }));
       const { error: saveError } = await db.from("coach_messages").upsert(completeRows, {
         onConflict: "conversation_id,message_id",

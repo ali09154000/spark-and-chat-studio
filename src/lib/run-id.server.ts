@@ -1,47 +1,22 @@
-import { createLovableAiGatewayRunIdFetch } from "@/lib/gateway-run-id";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "@/lib/gateway-run-id";
+export { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "@/lib/gateway-run-id";
+export { withLovableAiGatewayRunIdHeader } from "@/lib/gateway-run-id";
 
-export { createLovableAiGatewayRunIdFetch };
-
-export async function withLovableAiGatewayRunIdHeader(
-  response: Response,
-  gateway: { getRunId: () => string | undefined; waitForRunId: () => Promise<string | undefined> },
-  init?: HeadersInit,
-  options?: { waitForUpstreamHeaders?: boolean },
-): Promise<Response> {
-  const headers = new Headers(response.headers);
-  const extraHeaders = new Headers(init);
-  extraHeaders.forEach((value, name) => headers.set(name, value));
-  const runId = options?.waitForUpstreamHeaders === false ? gateway.getRunId() : await gateway.waitForRunId();
-  if (runId) headers.set("X-Lovable-AIG-Run-ID", runId);
-
-  const stream = response.body;
-  if (!stream || options?.waitForUpstreamHeaders === false) {
-    return new Response(stream, { status: response.status, statusText: response.statusText, headers });
-  }
-  const reader = stream.getReader();
-  const firstChunk = reader.read();
-  await gateway.waitForRunId();
-  const body = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        const first = await firstChunk;
-        if (first.done) controller.close();
-        else {
-          controller.enqueue(first.value);
-          while (true) {
-            const next = await reader.read();
-            if (next.done) break;
-            controller.enqueue(next.value);
-          }
-          controller.close();
-        }
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-    cancel(reason) {
-      return reader.cancel(reason);
-    },
+export function createLovableAiGatewayProvider(
+  apiKey: string,
+  initialRunId: string | undefined,
+  baseURL: string,
+) {
+  const runIdFetch = createLovableAiGatewayRunIdFetch(initialRunId);
+  const provider = createOpenAI({
+    baseURL: `${baseURL.replace(/\/+$/, "").replace(/\/v1$/, "")}/v1`,
+    apiKey,
+    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+    fetch: runIdFetch.fetch,
   });
-  return new Response(body, { status: response.status, statusText: response.statusText, headers });
+  return Object.assign(provider, {
+    getRunId: runIdFetch.getRunId,
+    waitForRunId: runIdFetch.waitForRunId,
+  });
 }
