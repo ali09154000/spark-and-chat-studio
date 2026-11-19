@@ -84,6 +84,7 @@ export type Database = {
           id: string
           media_path: string | null
           mode: string
+          practice_group_id: string | null
           topic: string
           transcript: string
           user_id: string
@@ -95,6 +96,7 @@ export type Database = {
           id?: string
           media_path?: string | null
           mode?: string
+          practice_group_id?: string | null
           topic?: string
           transcript?: string
           user_id: string
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           media_path?: string | null
           mode?: string
+          practice_group_id?: string | null
           topic?: string
           transcript?: string
           user_id?: string
@@ -215,7 +218,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_voice_session_ticket: {
+        Args: { p_token_hash: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

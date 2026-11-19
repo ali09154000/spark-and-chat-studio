@@ -1,17 +1,20 @@
 import { convertToModelMessages, streamText, validateUIMessages, type UIMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { getRequest } from "@tanstack/react-start/server";
+import {
+  createLovableAiGatewayProvider,
+  getLovableAiGatewayRunId,
+  withLovableAiGatewayRunIdHeader,
+} from "./run-id.server";
+import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
-import { withLovableAiGatewayRunIdHeader } from "./run-id.server";
 
-type RuntimeSupabase = ReturnType<typeof createClient>;
+type RuntimeSupabase = ReturnType<typeof createClient<Database>>;
 
 function createRequestClient(accessToken: string): RuntimeSupabase {
   const url = process.env["SUPABASE_URL"];
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!url || !key) throw new Error("Account service is unavailable.");
 
-  return createClient(url, key, {
+  return createClient<Database>(url, key, {
     global: {
       headers: { Authorization: `Bearer ${accessToken}` },
       fetch: (input, init) => {
@@ -116,16 +119,14 @@ export async function handleCoachChat(request: Request): Promise<Response> {
     .eq("user_id", user.id);
   if (updateTitleError) console.error("Could not update coach conversation title", updateTitleError.message);
 
-  const modelMessages = await convertToModelMessages(messages);
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) {
     return Response.json({ error: "The coach is temporarily unavailable. Please try again later." }, { status: 503 });
   }
 
-  const gateway = createOpenAI({
+  const modelMessages = await convertToModelMessages(messages);
+  const gateway = createLovableAiGatewayProvider(apiKey, getLovableAiGatewayRunId(request), {
     baseURL: "https://ai.gateway.lovable.dev/v1",
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
   });
 
   const result = streamText({
@@ -155,7 +156,7 @@ export async function handleCoachChat(request: Request): Promise<Response> {
     originalMessages: messages,
     sendReasoning: true,
     onEnd: async ({ messages: completeMessages, isAborted, outcome }) => {
-      if (isAborted || outcome !== "complete") return;
+      if (isAborted || outcome.status !== "completed") return;
       const completeRows = completeMessages.map((message) => ({
         conversation_id: conversationId,
         user_id: user.id,
@@ -174,11 +175,5 @@ export async function handleCoachChat(request: Request): Promise<Response> {
     },
   });
 
-  const currentRequest = getRequest();
-  return withLovableAiGatewayRunIdHeader(
-    response,
-    { getRunId: () => undefined, waitForRunId: async () => undefined },
-    { "Cache-Control": "no-store", "X-Request-Origin": new URL(currentRequest.url).origin },
-    { waitForUpstreamHeaders: false },
-  );
+  return withLovableAiGatewayRunIdHeader(response, gateway, { "Cache-Control": "no-store" });
 }
