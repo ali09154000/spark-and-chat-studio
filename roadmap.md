@@ -1,4 +1,5 @@
 # SpeakWell delivery
+- [ ] Complete the remaining SpeakWell experience requested by the user, following the approved product brief.
 - [x] Fix the current build failures before any publishing attempt.
 - [ ] Finish public home, private dashboard, and account settings.
 - [ ] Complete persistent typed coaching threads and the secure live voice call.
