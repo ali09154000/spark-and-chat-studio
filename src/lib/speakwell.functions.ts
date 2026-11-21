@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { queryOptions } from "@tanstack/react-query";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isValidPracticeAttempt } from "@/lib/practice-assessment";
 
 export const createConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,13 +32,13 @@ export const listConversations = createServerFn({ method: "GET" })
         .maybeSingle(),
       context.supabase
         .from("practice_sessions")
-        .select("id, topic, duration_seconds, created_at, attempt")
+        .select("id, topic, mode, duration_seconds, created_at, attempt, practice_group_id, transcript, media_path")
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(100),
       context.supabase
         .from("speaking_assessments")
-        .select("category_scores, feedback, created_at")
+        .select("practice_session_id, category_scores, feedback, created_at")
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(100),
@@ -52,6 +54,11 @@ export const listConversations = createServerFn({ method: "GET" })
       assessments: assessmentResult.data ?? [],
     };
   });
+
+export const speakwellOverviewQuery = queryOptions({
+  queryKey: ["speakwell", "overview"],
+  queryFn: () => listConversations(),
+});
 
 export const loadConversation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -124,6 +131,54 @@ export const deleteConversation = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const savePracticeSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    topic: string;
+    mode: string;
+    durationSeconds: number;
+    transcript: string;
+    attempt: number;
+    practiceGroupId?: string;
+    mediaPath?: string;
+  }) => input)
+  .handler(async ({ data: input, context }) => {
+    const modes = ["read-aloud", "free-speaking", "topic-prompt", "public-speaking"];
+    if (!input.topic.trim() || input.topic.length > 100 || !modes.includes(input.mode)) {
+      throw new Error("Choose a valid practice topic and mode.");
+    }
+    if (!isValidPracticeAttempt(input.attempt)) {
+      throw new Error("Each practice exercise supports attempts 1 through 3.");
+    }
+    if (!Number.isInteger(input.durationSeconds) || input.durationSeconds < 0 || input.durationSeconds > 7200) {
+      throw new Error("The recording duration is not valid.");
+    }
+    if (input.transcript.length > 12_000) throw new Error("The transcript is too long to save.");
+    if (input.practiceGroupId && !/^[0-9a-f-]{36}$/i.test(input.practiceGroupId)) {
+      throw new Error("This practice attempt could not be grouped.");
+    }
+    if (input.mediaPath && !input.mediaPath.startsWith(`${context.userId}/`)) {
+      throw new Error("This recording does not belong to your account.");
+    }
+
+    const { data, error } = await context.supabase
+      .from("practice_sessions")
+      .insert({
+        user_id: context.userId,
+        topic: input.topic.trim(),
+        mode: input.mode,
+        duration_seconds: input.durationSeconds,
+        transcript: input.transcript.trim(),
+        attempt: input.attempt,
+        practice_group_id: input.practiceGroupId ?? null,
+        media_path: input.mediaPath ?? null,
+      })
+      .select("id, topic, mode, duration_seconds, created_at, attempt, practice_group_id, transcript, media_path")
+      .single();
+    if (error || !data) throw new Error("This practice session could not be saved.");
+    return data;
+  });
+
 export const createVoiceTicket = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -134,8 +189,8 @@ export const createVoiceTicket = createServerFn({ method: "POST" })
       user_id: context.userId,
       token_hash: tokenHash,
       audience_path: "/api/live",
-      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      expires_at: new Date(Date.now() + 30_000).toISOString(),
     });
     if (error) throw new Error("A secure voice session could not be started.");
-    return { token, expiresInSeconds: 60 };
+    return { token, expiresInSeconds: 30 };
   });

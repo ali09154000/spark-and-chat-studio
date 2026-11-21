@@ -31,6 +31,7 @@ const initialState: LiveState = {
 export function useLiveVoice(
   options: {
     url?: string;
+    getTicket: () => Promise<string>;
     onEvent?: (event: LiveEvent) => void | Promise<void>;
   } = {},
 ) {
@@ -347,7 +348,10 @@ function createLiveVoice(options: LiveOptions) {
       if (!starting()) return;
       const sdp = connection.localDescription?.sdp;
       if (!sdp) throw new Error("Missing voice session offer");
-      socket = new WebSocket(options.url);
+      const ticket = await latest.current.getTicket();
+      if (!ticket || ticket.length > 128) throw new Error("A short-lived voice ticket could not be created.");
+      endpoint.searchParams.set("ticket", ticket);
+      socket = new WebSocket(endpoint.href);
       deadline = setTimeout(() => fail("Voice session did not start"), 50_000);
       socket.onopen = () => {
         if (!starting()) return release();

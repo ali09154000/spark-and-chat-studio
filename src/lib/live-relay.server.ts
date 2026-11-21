@@ -1,4 +1,6 @@
 import process from "node:process";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 import {
   connectLive,
@@ -83,21 +85,55 @@ function workerSocket(socket: WorkerSocket): LiveSocket {
   };
 }
 
-export function handleLiveRequest(request: Request): Response {
-  const waitUntil = (request as Request & Partial<LiveExecutionContext>).waitUntil;
-  if (!waitUntil) return new Response("Live runtime unavailable", { status: 503 });
-  const config = getLiveConfig();
+async function consumeVoiceTicket(request: Request): Promise<Response | null> {
   const rejected = validateLiveUpgrade(request);
   if (rejected) return rejected;
+  const token = new URL(request.url).searchParams.get("ticket");
+  if (!token || token.length !== 72 || !/^[a-f0-9-]+$/i.test(token)) {
+    return new Response("A valid one-time voice ticket is required", { status: 401 });
+  }
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return new Response("Voice authorization is unavailable", { status: 503 });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const tokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const db = createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(input instanceof Request ? input.headers : undefined);
+        if (init?.headers) new Headers(init.headers).forEach((value, name) => headers.set(name, value));
+        if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) headers.delete("Authorization");
+        headers.set("apikey", key);
+        return fetch(input, { ...init, headers });
+      },
+    },
+  });
+  const { data, error } = await db.rpc("consume_voice_session_ticket", { p_token_hash: tokenHash });
+  if (error || !data) return new Response("The voice ticket is expired or already used", { status: 401 });
+  return null;
+}
+
+export async function authorizeLiveRequest(request: Request, options: { allowMissingOrigin?: boolean } = {}): Promise<Response | null> {
+  const rejected = validateLiveUpgrade(request, options);
+  if (rejected) return rejected;
+  return consumeVoiceTicket(request);
+}
+
+export async function handleLiveRequest(request: Request, execution: LiveExecutionContext): Promise<Response> {
+  const rejected = await authorizeLiveRequest(request);
+  if (rejected) return rejected;
+  const config = getLiveConfig();
   const pair = new WebSocketPair();
   pair[1].accept();
-  bindLiveConnection(workerSocket(pair[1]), config, { waitUntil });
+  bindLiveConnection(workerSocket(pair[1]), config, execution);
   const response: ResponseInit & { webSocket: WebSocket } = { status: 101, webSocket: pair[0] };
   return new Response(null, response);
 }
 
-const conversationInstructions = `You are Mira, a calm learning companion.
-Speak naturally in brief replies. Ask a focused question when details are unclear.
+const conversationInstructions = `You are SpeakWell, a warm and patient North American English-speaking coach.
+Use a natural North American English accent and brief, clear spoken replies. Ask one focused question when details are unclear.
+Help the learner speak more naturally without interrupting or shaming them. Adapt explanations to their level.
 Backchannel policy: Use moderate listening sounds without taking over.
 Interruption policy: Stop your answer and listen when the user interrupts.
 Delegation policy:
@@ -550,7 +586,7 @@ export function bindLiveConnection(
         session: {
           model: config.liveModel,
           instructions: conversationInstructions,
-          audio: { output: { voice: "marin" } },
+          audio: { output: { voice: "meridian" } },
           delegation: { type: "client" },
         },
         transport: { type: "webrtc", sdp },

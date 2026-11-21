@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import type { LiveExecutionContext } from "./lib/live-relay.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,12 +45,26 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function liveExecutionContext(value: unknown): LiveExecutionContext | null {
+  if (typeof value !== "object" || value === null || !("waitUntil" in value) || typeof value.waitUntil !== "function") {
+    return null;
+  }
+  const waitUntil = value.waitUntil.bind(value);
+  return { waitUntil: (task) => waitUntil(task) };
+}
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/api/live") {
+        const execution = liveExecutionContext(ctx);
+        if (!execution) return new Response("Live voice is unavailable in this runtime", { status: 503 });
+        const { handleLiveRequest } = await import("./lib/live-relay.server");
+        return await handleLiveRequest(request, execution);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

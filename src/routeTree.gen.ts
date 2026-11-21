@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiPracticeAssessRouteImport } from './routes/api/practice.assess'
+import { Route as ApiPracticeTranscribeRouteImport } from './routes/api/practice.transcribe'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -27,35 +29,69 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPracticeAssessRoute = ApiPracticeAssessRouteImport.update({
+  id: '/api/practice/assess',
+  path: '/api/practice/assess',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPracticeTranscribeRoute = ApiPracticeTranscribeRouteImport.update({
+  id: '/api/practice/transcribe',
+  path: '/api/practice/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedRouteRoute
   '/auth': typeof AuthRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/practice/assess': typeof ApiPracticeAssessRoute
+  '/api/practice/transcribe': typeof ApiPracticeTranscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedRouteRoute
   '/auth': typeof AuthRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/practice/assess': typeof ApiPracticeAssessRoute
+  '/api/practice/transcribe': typeof ApiPracticeTranscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRoute
   '/auth': typeof AuthRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/practice/assess': typeof ApiPracticeAssessRoute
+  '/api/practice/transcribe': typeof ApiPracticeTranscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/api/chat'
+    | '/api/practice/assess'
+    | '/api/practice/transcribe'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/api/chat'
-  id: '__root__' | '/_authenticated' | '/auth' | '/api/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/api/chat'
+    | '/api/practice/assess'
+    | '/api/practice/transcribe'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/auth'
+    | '/api/chat'
+    | '/api/practice/assess'
+    | '/api/practice/transcribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRoute
   AuthRoute: typeof AuthRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPracticeAssessRoute: typeof ApiPracticeAssessRoute
+  ApiPracticeTranscribeRoute: typeof ApiPracticeTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -81,6 +117,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/practice/assess': {
+      id: '/api/practice/assess'
+      path: '/api/practice/assess'
+      fullPath: '/api/practice/assess'
+      preLoaderRoute: typeof ApiPracticeAssessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/practice/transcribe': {
+      id: '/api/practice/transcribe'
+      path: '/api/practice/transcribe'
+      fullPath: '/api/practice/transcribe'
+      preLoaderRoute: typeof ApiPracticeTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -88,6 +138,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRoute,
   AuthRoute: AuthRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPracticeAssessRoute: ApiPracticeAssessRoute,
+  ApiPracticeTranscribeRoute: ApiPracticeTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

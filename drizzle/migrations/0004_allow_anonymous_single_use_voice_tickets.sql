@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.consume_voice_session_ticket(text) TO anon;
