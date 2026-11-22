@@ -14,4 +14,12 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches the protected dashboard after sign-in", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/dashboard");
+
+    expect(matches.at(-1)?.routeId).toContain("dashboard");
+  });
 });

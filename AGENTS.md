@@ -34,3 +34,5 @@ use the editor.
 - Stream AI chat through an authenticated TanStack server route, replay the account-owned conversation history, and persist only complete UI messages; this protects credentials and avoids incomplete or cross-account history.
 - Keep VoiceStudio as a separate, server-adapted speech service; require its short-lived path-bound browser tickets rather than exposing its master credential.
 <!-- AGENT-MEMORY:END -->
+
+- Keep `/` as a public session-aware entry and send signed-in users to the protected `/dashboard`, so sign-in returns never land on an empty screen.

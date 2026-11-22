@@ -27,7 +27,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function safeRedirect(value: string | undefined) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
   return value;
 }
 

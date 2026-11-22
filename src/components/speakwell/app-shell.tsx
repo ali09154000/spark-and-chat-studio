@@ -2,20 +2,10 @@ import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AudioLines,
-  BookOpenText,
-  ChartNoAxesCombined,
   LayoutDashboard,
-  LibraryBig,
   LogOut,
-  MessageSquareText,
-  Mic2,
   Moon,
-  Presentation,
-  Settings2,
   Sun,
-  Trophy,
-  Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,17 +15,6 @@ import mark from "@/assets/speakwell-mark.png";
 
 const navigation = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/practice", label: "Practice studio", icon: Mic2 },
-  { to: "/topics", label: "Topic library", icon: LibraryBig },
-  { to: "/coach", label: "AI coach", icon: MessageSquareText },
-  { to: "/recordings", label: "My recordings", icon: Video },
-  { to: "/progress", label: "Performance", icon: ChartNoAxesCombined },
-  { to: "/plan", label: "Learning plan", icon: BookOpenText },
-  { to: "/pronunciation", label: "Pronunciation lab", icon: AudioLines },
-  { to: "/grammar", label: "Grammar & vocabulary", icon: BookOpenText },
-  { to: "/public-speaking", label: "Public speaking", icon: Presentation },
-  { to: "/achievements", label: "Achievements", icon: Trophy },
-  { to: "/settings", label: "Settings", icon: Settings2 },
 ] as const;
 
 export function AppShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
