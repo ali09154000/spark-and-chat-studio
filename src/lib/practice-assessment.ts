@@ -64,53 +64,67 @@ export function calculateTranscriptOverallScore(scores: TranscriptCategoryScores
 }
 
 export function parseTranscriptAssessment(value: unknown): TranscriptAssessment {
-  if (!isRecord(value) || !isRecord(value.categoryScores) || !Array.isArray(value.corrections) || !Array.isArray(value.priorities)) {
+  if (
+    !isRecord(value) ||
+    !isRecord(value["categoryScores"]) ||
+    !Array.isArray(value["corrections"]) ||
+    !Array.isArray(value["priorities"])
+  ) {
     throw new Error("The assessment could not be read.");
   }
 
   const categoryScores = {} as TranscriptCategoryScores;
   for (const category of categories) {
-    const score = value.categoryScores[category];
+    const score = value["categoryScores"][category];
     if (typeof score !== "number" || !Number.isInteger(score) || score < 0 || score > 100) {
       throw new Error("The assessment included an invalid score.");
     }
     categoryScores[category] = score;
   }
 
-  const corrections = value.corrections.slice(0, 5).map((item) => {
+  const corrections = value["corrections"].slice(0, 5).map((item) => {
     if (!isRecord(item)) throw new Error("The assessment corrections could not be read.");
     return {
-      said: requiredText(item.said, "original wording", 500),
-      natural: requiredText(item.natural, "suggested wording", 500),
-      why: requiredText(item.why, "correction explanation", 700),
-      example: requiredText(item.example, "practice example", 500),
+      said: requiredText(item["said"], "original wording", 500),
+      natural: requiredText(item["natural"], "suggested wording", 500),
+      why: requiredText(item["why"], "correction explanation", 700),
+      example: requiredText(item["example"], "practice example", 500),
     };
   });
 
-  const priorities = value.priorities.slice(0, 3).map((item) => {
-    if (!isRecord(item) || typeof item.level !== "string" || !priorityLevels.includes(item.level as PracticePriority["level"])) {
+  const priorities = value["priorities"].slice(0, 3).map((item) => {
+    if (
+      !isRecord(item) ||
+      typeof item["level"] !== "string" ||
+      !priorityLevels.includes(item["level"] as PracticePriority["level"])
+    ) {
       throw new Error("The assessment priorities could not be read.");
     }
-    if (typeof item.minutes !== "number" || !Number.isInteger(item.minutes) || item.minutes < 1 || item.minutes > 60) {
+    if (
+      typeof item["minutes"] !== "number" ||
+      !Number.isInteger(item["minutes"]) ||
+      item["minutes"] < 1 ||
+      item["minutes"] > 60
+    ) {
       throw new Error("The assessment practice time could not be read.");
     }
     return {
-      level: item.level as PracticePriority["level"],
-      focus: requiredText(item.focus, "priority", 240),
-      why: requiredText(item.why, "priority explanation", 500),
-      practice: requiredText(item.practice, "practice exercise", 700),
-      minutes: item.minutes,
-      successSignal: requiredText(item.successSignal, "progress signal", 300),
+      level: item["level"] as PracticePriority["level"],
+      focus: requiredText(item["focus"], "priority", 240),
+      why: requiredText(item["why"], "priority explanation", 500),
+      practice: requiredText(item["practice"], "practice exercise", 700),
+      minutes: item["minutes"],
+      successSignal: requiredText(item["successSignal"], "progress signal", 300),
     };
   });
 
   return {
     categoryScores,
     overallScore: calculateTranscriptOverallScore(categoryScores),
-    strengths: listOfText(value.strengths, "strengths", 4),
+    strengths: listOfText(value["strengths"], "strengths", 4),
     corrections,
     priorities,
-    polishedVersion: requiredText(value.polishedVersion, "polished version", 12_000),
-    summary: requiredText(value.summary, "summary", 1_000),
+    polishedVersion: requiredText(value["polishedVersion"], "polished version", 12_000),
+    summary: requiredText(value["summary"], "summary", 1_000),
   };
 }

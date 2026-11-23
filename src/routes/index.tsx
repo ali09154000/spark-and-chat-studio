@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, LoaderCircle, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import mark from "@/assets/speakwell-mark.png";
@@ -21,20 +21,14 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let active = true;
     void supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      if (data.user) {
+      if (active && data.user) {
         void navigate({ to: "/dashboard", replace: true });
-      } else {
-        setChecking(false);
       }
-    }).catch(() => {
-      if (active) setChecking(false);
-    });
+    }).catch(() => undefined);
 
     return () => {
       active = false;
@@ -58,17 +52,11 @@ function HomePage() {
           <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
             Build confidence in English, one conversation at a time.
           </p>
-          {checking ? (
-            <p className="mt-10 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Opening your learning space…
-            </p>
-          ) : (
-            <Button asChild className="mt-10" size="lg">
-              <Link to="/auth">
-                Sign in or create an account <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
-          )}
+          <Button asChild className="mt-10" size="lg">
+            <Link to="/auth">
+              Sign in or create an account <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
         </div>
       </section>
     </main>

@@ -33,7 +33,7 @@ export function useLiveVoice(
     url?: string;
     getTicket: () => Promise<string>;
     onEvent?: (event: LiveEvent) => void | Promise<void>;
-  } = {},
+  },
 ) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const controller = useRef<ReturnType<typeof createLiveVoice> | null>(null);
@@ -73,6 +73,7 @@ export function useLiveVoice(
     const voice = createLiveVoice({
       url: endpoint.href,
       audio,
+      getTicket: () => latest.current.getTicket(),
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
@@ -123,6 +124,7 @@ export function useLiveVoice(
 type LiveOptions = {
   url: string;
   audio: HTMLAudioElement;
+  getTicket: () => Promise<string>;
   onEvent: (event: LiveEvent) => void;
 };
 
@@ -348,8 +350,9 @@ function createLiveVoice(options: LiveOptions) {
       if (!starting()) return;
       const sdp = connection.localDescription?.sdp;
       if (!sdp) throw new Error("Missing voice session offer");
-      const ticket = await latest.current.getTicket();
+      const ticket = await options.getTicket();
       if (!ticket || ticket.length > 128) throw new Error("A short-lived voice ticket could not be created.");
+      const endpoint = new URL(options.url);
       endpoint.searchParams.set("ticket", ticket);
       socket = new WebSocket(endpoint.href);
       deadline = setTimeout(() => fail("Voice session did not start"), 50_000);
